@@ -73,9 +73,11 @@ jobs:
 
       - name: Commit and push changes
         if: env.SKIP_BUILD == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git add .n8n_version_next
           git commit -m "Update .n8n_version_next with latest digest"
-          git push "https://wkalamaras:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:${{ github.ref }}
+          git push

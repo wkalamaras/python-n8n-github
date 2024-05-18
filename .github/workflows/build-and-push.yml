@@ -80,4 +80,4 @@ jobs:
           git config --global user.name "GitHub Actions"
           git add .n8n_version_next
           git commit -m "Update .n8n_version_next with latest digest"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:$(echo $GITHUB_REF | sed -e 's/refs\/heads\///')

@@ -65,7 +65,10 @@ jobs:
 
       - name: Update digest file
         if: env.SKIP_BUILD == 'false'
-        run: echo "${{ env.LATEST_DIGEST }}" > .n8n_version_next
+        run: |
+          echo "Updating .n8n_version_next with the latest digest..."
+          echo ${{ env.LATEST_DIGEST }} > .n8n_version_next
+          cat .n8n_version_next
 
       - name: Commit and push changes
         if: env.SKIP_BUILD == 'false'

@@ -58,16 +58,17 @@ jobs:
           docker build --pull --build-arg BUILD_VERSION=next -t python-n8n:next -f Dockerfile .
 
           # Tag the local image
-          docker tag python-n8n:next ${{ secrets.DOCKERHUB_USERNAME }}/python-n8n-github:next
+          docker tag python-n8n:next wkalamaras/python-n8n-github:next
 
           # Push the image to Docker Hub
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/python-n8n-github:next
+          docker push wkalamaras/python-n8n-github:next
 
       - name: Update digest file
         if: env.SKIP_BUILD == 'false'
         run: |
           echo "Updating .n8n_version_next with the latest digest..."
           echo ${{ env.LATEST_DIGEST }} > .n8n_version_next
+          echo "Updated .n8n_version_next:"
           cat .n8n_version_next
 
       - name: Commit and push changes
@@ -77,4 +78,4 @@ jobs:
           git config --global user.name "GitHub Actions"
           git add .n8n_version_next
           git commit -m "Update .n8n_version_next with latest digest"
-          git push
+          git push "https://wkalamaras:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:${{ github.ref }}

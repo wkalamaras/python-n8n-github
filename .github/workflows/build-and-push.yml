@@ -27,23 +27,24 @@ jobs:
           echo "LATEST_DIGEST=${LATEST_DIGEST}" >> $GITHUB_ENV
           echo "LATEST_DIGEST: $LATEST_DIGEST"
 
-      - name: Compare current and latest digest
+      - name: Get current digest
         run: |
-          VERSION_FILE=".n8n_version_next"
-          if [ -f "$VERSION_FILE" ]; then
-            CURRENT_DIGEST=$(cat $VERSION_FILE)
+          if [ -f ".n8n_version_next" ]; then
+            CURRENT_DIGEST=$(cat .n8n_version_next)
+            echo "CURRENT_DIGEST=${CURRENT_DIGEST}" >> $GITHUB_ENV
+            echo "CURRENT_DIGEST: $CURRENT_DIGEST"
           else
-            CURRENT_DIGEST=""
+            echo "CURRENT_DIGEST=" >> $GITHUB_ENV
+            echo "No current digest found"
           fi
-          echo "CURRENT_DIGEST=${CURRENT_DIGEST}" >> $GITHUB_ENV
-          echo "LATEST_DIGEST: $LATEST_DIGEST"
-          echo "CURRENT_DIGEST: $CURRENT_DIGEST"
 
-          if [ "$LATEST_DIGEST" = "$CURRENT_DIGEST" ]; then
-            echo "The Docker Hub image digest matches the current stored digest. Skipping build and push."
+      - name: Compare digests
+        run: |
+          if [ "${{ env.LATEST_DIGEST }}" = "${{ env.CURRENT_DIGEST }}" ]; then
+            echo "The digests match. Skipping build and push."
             echo "SKIP_BUILD=true" >> $GITHUB_ENV
           else
-            echo "New digest detected. Proceeding with build and push..."
+            echo "The digests do not match. Proceeding with build and push."
             echo "SKIP_BUILD=false" >> $GITHUB_ENV
           fi
 
@@ -56,18 +57,21 @@ jobs:
           # Build the Docker image with the next base image
           docker build --pull --build-arg BUILD_VERSION=next -t python-n8n:next -f Dockerfile .
 
-          # Store the new digest
-          echo $LATEST_DIGEST > .n8n_version_next
-
           # Tag the local image
-          docker tag python-n8n:next wkalamaras/python-n8n-github:next
+          docker tag python-n8n:next ${{ secrets.DOCKERHUB_USERNAME }}/python-n8n-github:next
 
           # Push the image to Docker Hub
-          docker push wkalamaras/python-n8n-github:next
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/python-n8n-github:next
 
-      - name: Save new digest
+      - name: Update digest file
         if: env.SKIP_BUILD == 'false'
-        uses: actions/upload-artifact@v2
-        with:
-          name: n8n_version_next
-          path: .n8n_version_next
+        run: echo "${{ env.LATEST_DIGEST }}" > .n8n_version_next
+
+      - name: Commit and push changes
+        if: env.SKIP_BUILD == 'false'
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add .n8n_version_next
+          git commit -m "Update .n8n_version_next with latest digest"
+          git push

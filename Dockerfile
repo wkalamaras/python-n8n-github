@@ -1,3 +1,9 @@
+# ============================================================================
+# BRANCH: aarch64
+# ARCHITECTURE: ARM64 (Raspberry Pi, Orange Pi, Apple Silicon)
+# DOCKER HUB: wkalamaras/mambaforge-n8n:next, wkalamaras/mambaforge-n8n:latest
+# ============================================================================
+
 # Set a build argument for the version, with a default value of 'latest'
 ARG BUILD_VERSION=latest
 

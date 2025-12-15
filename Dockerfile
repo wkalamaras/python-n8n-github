@@ -1,3 +1,9 @@
+# ============================================================================
+# BRANCH: amd64
+# ARCHITECTURE: x86_64 (Intel/AMD)
+# DOCKER HUB: wkalamaras/python-n8n-github:next, wkalamaras/python-n8n-github:latest
+# ============================================================================
+
 # Set a build argument for the version, with a default value of 'latest'
 ARG BUILD_VERSION=latest
 

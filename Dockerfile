@@ -9,16 +9,15 @@ USER root
 
 # Install necessary dependencies
 RUN apk update && \
-    apk add --no-cache python3 py3-pip
+    apk add --no-cache python3 py3-pip python3-dev
 
-# Create a virtual environment
-RUN python3 -m venv /opt/venv
+# Create a virtual environment and install packages
+RUN python3 -m venv /opt/venv && \
+    /opt/venv/bin/pip install --upgrade pip && \
+    /opt/venv/bin/pip install pandas openpyxl
 
 # Activate the virtual environment
 ENV PATH="/opt/venv/bin:$PATH"
-
-# Install pandas and openpyxl using pip
-RUN pip install pandas openpyxl
 
 # Switch back to the user "node" for non-privileged operations
 USER node

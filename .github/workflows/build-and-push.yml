@@ -1,4 +1,4 @@
-name: Build and Push Docker Images (ARM64 Next)
+name: Build and Push Docker Images (ARM64)
 
 on:
   schedule:
@@ -63,6 +63,7 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: wkalamaras/mambaforge-n8n:next
+          build-args: BUILD_VERSION=next
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -80,4 +81,85 @@ jobs:
           git config --global user.name "GitHub Actions"
           git add .n8n_version_next
           git commit -m "Update .n8n_version_next with latest digest" || exit 0
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}
+
+  build-latest:
+    runs-on: ubuntu-latest
+    needs: build-next
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull latest changes
+        run: git pull origin aarch64 || true
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Fetch n8n:latest digest from Docker Hub
+        run: |
+          echo "Fetching n8n:latest tag information from Docker Hub..."
+          TAG_INFO=$(curl -s https://hub.docker.com/v2/repositories/n8nio/n8n/tags/latest/)
+          LATEST_DIGEST=$(echo $TAG_INFO | jq -r '.images[] | select(.architecture=="arm64").digest')
+          echo "LATEST_DIGEST=${LATEST_DIGEST}" >> $GITHUB_ENV
+          echo "Latest n8n:latest arm64 digest: $LATEST_DIGEST"
+
+      - name: Get current digest
+        run: |
+          if [ -f ".n8n_version_latest" ]; then
+            CURRENT_DIGEST=$(cat .n8n_version_latest)
+            echo "CURRENT_DIGEST=${CURRENT_DIGEST}" >> $GITHUB_ENV
+            echo "Current digest: $CURRENT_DIGEST"
+          else
+            echo "CURRENT_DIGEST=" >> $GITHUB_ENV
+            echo "No current digest found"
+          fi
+
+      - name: Compare digests
+        run: |
+          if [ "${{ env.LATEST_DIGEST }}" = "${{ env.CURRENT_DIGEST }}" ]; then
+            echo "Digests match. Skipping build."
+            echo "SKIP_BUILD=true" >> $GITHUB_ENV
+          else
+            echo "New version detected. Building..."
+            echo "SKIP_BUILD=false" >> $GITHUB_ENV
+          fi
+
+      - name: Set up QEMU
+        if: env.SKIP_BUILD == 'false'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        if: env.SKIP_BUILD == 'false'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push n8n:latest arm64 image
+        if: env.SKIP_BUILD == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: wkalamaras/mambaforge-n8n:latest
+          build-args: BUILD_VERSION=latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update digest file
+        if: env.SKIP_BUILD == 'false'
+        run: |
+          echo ${{ env.LATEST_DIGEST }} > .n8n_version_latest
+
+      - name: Commit and push changes
+        if: env.SKIP_BUILD == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add .n8n_version_latest
+          git commit -m "Update .n8n_version_latest with latest digest" || exit 0
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}

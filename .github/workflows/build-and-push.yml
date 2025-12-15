@@ -81,6 +81,7 @@ jobs:
           git config --global user.name "GitHub Actions"
           git add .n8n_version_next
           git commit -m "Update .n8n_version_next with latest digest" || exit 0
+          git pull --rebase https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ${{ github.ref }} || true
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}
 
   build-latest:
@@ -162,4 +163,5 @@ jobs:
           git config --global user.name "GitHub Actions"
           git add .n8n_version_latest
           git commit -m "Update .n8n_version_latest with latest digest" || exit 0
+          git pull --rebase https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ${{ github.ref }} || true
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}

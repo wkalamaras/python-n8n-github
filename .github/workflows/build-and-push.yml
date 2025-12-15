@@ -1,38 +1,37 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Images (ARM64 Next)
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # Runs the workflow every five minute
+    - cron: '*/30 * * * *'  # Runs every 30 minutes
   workflow_dispatch:
 
 jobs:
-  build-and-push:
+  build-next:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Fetch latest tag information from Docker Hub
+      - name: Fetch n8n:next digest from Docker Hub
         run: |
-          echo "Fetching latest tag information from Docker Hub..."
+          echo "Fetching n8n:next tag information from Docker Hub..."
           TAG_INFO=$(curl -s https://hub.docker.com/v2/repositories/n8nio/n8n/tags/next/)
-          echo "Tag info: $TAG_INFO"
-          LATEST_DIGEST=$(echo $TAG_INFO | jq -r '.images[] | select(.architecture=="amd64").digest')
+          LATEST_DIGEST=$(echo $TAG_INFO | jq -r '.images[] | select(.architecture=="arm64").digest')
           echo "LATEST_DIGEST=${LATEST_DIGEST}" >> $GITHUB_ENV
-          echo "LATEST_DIGEST: $LATEST_DIGEST"
+          echo "Latest n8n:next arm64 digest: $LATEST_DIGEST"
 
       - name: Get current digest
         run: |
           if [ -f ".n8n_version_next" ]; then
             CURRENT_DIGEST=$(cat .n8n_version_next)
             echo "CURRENT_DIGEST=${CURRENT_DIGEST}" >> $GITHUB_ENV
-            echo "CURRENT_DIGEST: $CURRENT_DIGEST"
+            echo "Current digest: $CURRENT_DIGEST"
           else
             echo "CURRENT_DIGEST=" >> $GITHUB_ENV
             echo "No current digest found"
@@ -41,34 +40,36 @@ jobs:
       - name: Compare digests
         run: |
           if [ "${{ env.LATEST_DIGEST }}" = "${{ env.CURRENT_DIGEST }}" ]; then
-            echo "The digests match. Skipping build and push."
+            echo "Digests match. Skipping build."
             echo "SKIP_BUILD=true" >> $GITHUB_ENV
           else
-            echo "The digests do not match. Proceeding with build and push."
+            echo "New version detected. Building..."
             echo "SKIP_BUILD=false" >> $GITHUB_ENV
           fi
 
-      - name: Build and push Docker image
+      - name: Set up QEMU
         if: env.SKIP_BUILD == 'false'
-        run: |
-          # Pull the latest base image
-          docker pull n8nio/n8n:next
+        uses: docker/setup-qemu-action@v3
 
-          # Build the Docker image with the next base image
-          docker build --pull --build-arg BUILD_VERSION=next -t python-n8n:next -f Dockerfile .
+      - name: Set up Docker Buildx
+        if: env.SKIP_BUILD == 'false'
+        uses: docker/setup-buildx-action@v3
 
-          # Tag the local image
-          docker tag python-n8n:next wkalamaras/python-n8n-github:next
-
-          # Push the image to Docker Hub
-          docker push wkalamaras/python-n8n-github:next
+      - name: Build and push n8n:next arm64 image
+        if: env.SKIP_BUILD == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: wkalamaras/mambaforge-n8n:next
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Update digest file
         if: env.SKIP_BUILD == 'false'
         run: |
-          echo "Updating .n8n_version_next with the latest digest..."
           echo ${{ env.LATEST_DIGEST }} > .n8n_version_next
-          cat .n8n_version_next
 
       - name: Commit and push changes
         if: env.SKIP_BUILD == 'false'
@@ -78,5 +79,5 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git add .n8n_version_next
-          git commit -m "Update .n8n_version_next with latest digest"
+          git commit -m "Update .n8n_version_next with latest digest" || exit 0
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}

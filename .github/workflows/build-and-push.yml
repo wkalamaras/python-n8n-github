@@ -59,11 +59,9 @@ jobs:
 
           # Tag the local image
           docker tag python-n8n:next wkalamaras/python-n8n-github:next
-          docker tag python-n8n:next wkalamaras/mambaforge-n8n:next
 
           # Push the image to Docker Hub
           docker push wkalamaras/python-n8n-github:next
-          docker push wkalamaras/mambaforge-n8n:next
 
       - name: Update digest file
         if: env.SKIP_BUILD == 'false'

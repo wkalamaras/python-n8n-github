@@ -16,11 +16,22 @@ This branch contains the Dockerfile and GitHub Actions workflow for ARM64 builds
 - **Base Images**: `n8nio/n8n:next` and `n8nio/n8n:latest`
 - **Architecture**: ARM64 (aarch64)
 - **Python**: 3.12
-- **Packages**: pandas, openpyxl
+- **Packages**: pandas, openpyxl, pytz, xlsxwriter, xlrd, xlwt
+
+### Included Python Packages
+
+- Python 3.12
+- pandas
+- openpyxl
+- pytz
+- xlsxwriter
+- xlrd
+- xlwt
+- numpy (pandas dependency)
 
 ### Build Schedule
 
-The GitHub Actions workflow runs every 30 minutes to check for updates.
+The GitHub Actions workflow runs every hour to check for updates.
 
 ### Docker Hub
 

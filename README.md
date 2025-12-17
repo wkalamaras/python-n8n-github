@@ -73,9 +73,9 @@ GitHub Actions scheduled workflows only run on the **default branch** (amd64). T
 3. To fix: Generate a new PAT with `repo` and `workflow` permissions, then update the `PAT_TOKEN` secret
 
 ### To create a new PAT:
-1. Go to GitHub â†’ Settings â†’ Developer settings â†’ Personal access tokens
+1. Go to GitHub -> Settings -> Developer settings -> Personal access tokens
 2. Generate new token with `repo` and `workflow` scopes
-3. Go to this repo â†’ Settings â†’ Secrets and variables â†’ Actions
+3. Go to this repo -> Settings -> Secrets and variables -> Actions
 4. Update the `PAT_TOKEN` secret with the new token
 
 ## Notes

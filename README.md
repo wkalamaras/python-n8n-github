@@ -1,6 +1,6 @@
 # Python-enabled n8n Docker Images
 
-Custom n8n Docker images with Python 3.12, pandas, and openpyxl pre-installed.
+Custom n8n Docker images with Python 3.12 and data processing packages pre-installed.
 
 ## Available Images
 
@@ -25,6 +25,10 @@ Built automatically every hour when n8n releases updates.
 - Python 3.12
 - pandas
 - openpyxl
+- pytz
+- xlsxwriter
+- xlrd
+- xlwt
 - numpy (pandas dependency)
 
 ## Usage

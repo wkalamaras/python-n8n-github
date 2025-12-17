@@ -1,24 +1,26 @@
-# mambaforge-n8n (ARM64)
+# Python-enabled n8n Docker Images
 
-Custom n8n Docker image with Python 3.12, pandas, and openpyxl for ARM64 architecture.
+Custom n8n Docker images with Python 3.12 and data processing packages pre-installed.
 
-## Branch Structure
+## Available Images
 
-- **amd64**: GitHub Actions builds for x86_64 (next and latest tags)
-- **aarch64**: GitHub Actions builds for ARM64 (next and latest tags)
+### amd64 (x86_64) - GitHub Actions
+Built automatically every hour when n8n releases updates.
 
-## This Branch
+| Image | Base | Description |
+|-------|------|-------------|
+| `wkalamaras/python-n8n-github:next` | n8n:next | Latest development build |
+| `wkalamaras/python-n8n-github:latest` | n8n:latest | Latest stable build |
 
-This branch contains the Dockerfile and GitHub Actions workflow for ARM64 builds.
+### arm64 (aarch64) - GitHub Actions
+Built automatically every hour when n8n releases updates.
 
-### Image Details
+| Image | Base | Description |
+|-------|------|-------------|
+| `wkalamaras/mambaforge-n8n:next` | n8n:next | Latest development build |
+| `wkalamaras/mambaforge-n8n:latest` | n8n:latest | Latest stable build |
 
-- **Base Images**: `n8nio/n8n:next` and `n8nio/n8n:latest`
-- **Architecture**: ARM64 (aarch64)
-- **Python**: 3.12
-- **Packages**: pandas, openpyxl, pytz, xlsxwriter, xlrd, xlwt
-
-### Included Python Packages
+## Included Python Packages
 
 - Python 3.12
 - pandas
@@ -29,13 +31,53 @@ This branch contains the Dockerfile and GitHub Actions workflow for ARM64 builds
 - xlwt
 - numpy (pandas dependency)
 
-### Build Schedule
+## Usage
 
-The GitHub Actions workflow runs every hour to check for updates.
+```bash
+# amd64 - next
+docker pull wkalamaras/python-n8n-github:next
 
-### Docker Hub
+# amd64 - latest
+docker pull wkalamaras/python-n8n-github:latest
 
-Images available at: [wkalamaras/mambaforge-n8n](https://hub.docker.com/r/wkalamaras/mambaforge-n8n)
+# arm64 - next
+docker pull wkalamaras/mambaforge-n8n:next
 
-- `wkalamaras/mambaforge-n8n:next` - ARM64 next build
-- `wkalamaras/mambaforge-n8n:latest` - ARM64 latest build
+# arm64 - latest
+docker pull wkalamaras/mambaforge-n8n:latest
+```
+
+## Branches
+
+- `amd64` - GitHub Actions workflow for amd64 builds (default branch)
+- `aarch64` - GitHub Actions workflow for arm64 builds
+
+## Build Schedule
+
+Both architectures are built every hour via GitHub Actions.
+
+## How the Scheduled Builds Work
+
+**Important: Read this if aarch64 builds stop working!**
+
+GitHub Actions scheduled workflows only run on the **default branch** (amd64). To work around this limitation:
+
+1. The `amd64` workflow runs on schedule (every hour)
+2. The `amd64` workflow contains a `trigger-aarch64` job that uses the GitHub API to trigger the `aarch64` workflow via `workflow_dispatch`
+3. This requires a **Personal Access Token (PAT)** stored as a repository secret named `PAT_TOKEN`
+
+### If aarch64 builds stop running:
+
+1. Check if the `PAT_TOKEN` secret still exists in repository settings
+2. Check if the PAT has expired or been revoked
+3. To fix: Generate a new PAT with `repo` and `workflow` permissions, then update the `PAT_TOKEN` secret
+
+### To create a new PAT:
+1. Go to GitHub -> Settings -> Developer settings -> Personal access tokens
+2. Generate new token with `repo` and `workflow` scopes
+3. Go to this repo -> Settings -> Secrets and variables -> Actions
+4. Update the `PAT_TOKEN` secret with the new token
+
+## Notes
+
+These images use a multi-stage build approach to copy Python from an Alpine builder into the distroless n8n base image.

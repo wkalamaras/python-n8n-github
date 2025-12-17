@@ -16,7 +16,7 @@ RUN apk add --no-cache libffi
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --upgrade pip && \
-    pip install pandas openpyxl
+    pip install pandas openpyxl pytz xlsxwriter xlrd xlwt
 
 # Stage 2: Final n8n image
 FROM n8nio/n8n:${BUILD_VERSION}

@@ -18,13 +18,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Fetch n8n:next digest from Docker Hub
+      - name: Fetch n8n:next-arm64 digest from Docker Hub
         run: |
-          echo "Fetching n8n:next tag information from Docker Hub..."
-          TAG_INFO=$(curl -s https://hub.docker.com/v2/repositories/n8nio/n8n/tags/next/)
-          LATEST_DIGEST=$(echo $TAG_INFO | jq -r '.images[] | select(.architecture=="arm64").digest')
+          echo "Fetching n8n:next-arm64 tag information from Docker Hub..."
+          TAG_INFO=$(curl -sf --retry 3 --retry-delay 5 https://hub.docker.com/v2/repositories/n8nio/n8n/tags/next-arm64/) || {
+            echo "Failed to fetch from Docker Hub API after retries"
+            exit 1
+          }
+          LATEST_DIGEST=$(echo "$TAG_INFO" | jq -r '.digest')
+          if [ -z "$LATEST_DIGEST" ] || [ "$LATEST_DIGEST" = "null" ]; then
+            echo "Could not find digest in response"
+            exit 1
+          fi
           echo "LATEST_DIGEST=${LATEST_DIGEST}" >> $GITHUB_ENV
-          echo "Latest n8n:next arm64 digest: $LATEST_DIGEST"
+          echo "Latest n8n:next-arm64 digest: $LATEST_DIGEST"
 
       - name: Get current digest
         run: |
@@ -63,7 +70,7 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: wkalamaras/mambaforge-n8n:next
-          build-args: BUILD_VERSION=next
+          build-args: BUILD_VERSION=next-arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -100,13 +107,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Fetch n8n:latest digest from Docker Hub
+      - name: Fetch n8n:latest-arm64 digest from Docker Hub
         run: |
-          echo "Fetching n8n:latest tag information from Docker Hub..."
-          TAG_INFO=$(curl -s https://hub.docker.com/v2/repositories/n8nio/n8n/tags/latest/)
-          LATEST_DIGEST=$(echo $TAG_INFO | jq -r '.images[] | select(.architecture=="arm64").digest')
+          echo "Fetching n8n:latest-arm64 tag information from Docker Hub..."
+          TAG_INFO=$(curl -sf --retry 3 --retry-delay 5 https://hub.docker.com/v2/repositories/n8nio/n8n/tags/latest-arm64/) || {
+            echo "Failed to fetch from Docker Hub API after retries"
+            exit 1
+          }
+          LATEST_DIGEST=$(echo "$TAG_INFO" | jq -r '.digest')
+          if [ -z "$LATEST_DIGEST" ] || [ "$LATEST_DIGEST" = "null" ]; then
+            echo "Could not find digest in response"
+            exit 1
+          fi
           echo "LATEST_DIGEST=${LATEST_DIGEST}" >> $GITHUB_ENV
-          echo "Latest n8n:latest arm64 digest: $LATEST_DIGEST"
+          echo "Latest n8n:latest-arm64 digest: $LATEST_DIGEST"
 
       - name: Get current digest
         run: |
@@ -145,7 +159,7 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: wkalamaras/mambaforge-n8n:latest
-          build-args: BUILD_VERSION=latest
+          build-args: BUILD_VERSION=latest-arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
